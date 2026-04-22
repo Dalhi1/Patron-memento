@@ -1,5 +1,6 @@
 import tkinter as tk
 import sys
+import subprocess
 
 # ---------------------------
 # Sonidos
@@ -16,7 +17,7 @@ else:
 
 
 # ---------------------------
-# memento
+# MEMENTO
 # ---------------------------
 class Memento:
     def __init__(self, state):
@@ -27,7 +28,7 @@ class Memento:
 
 
 # ---------------------------
-# originador
+# ORIGINADOR
 # ---------------------------
 class SeguridadInfantil:
     def __init__(self):
@@ -54,7 +55,7 @@ class SeguridadInfantil:
 
 
 # ---------------------------
-# cuidador
+# CUIDADOR
 # ---------------------------
 class Historial:
     def __init__(self):
@@ -70,7 +71,7 @@ class Historial:
 
 
 # ---------------------------
-# App
+# APP
 # ---------------------------
 class App:
     def __init__(self, root):
@@ -93,37 +94,7 @@ class App:
         self.crear_ui()
 
     # ---------------------------
-    # Animacion
-    # ---------------------------
-    def hex_to_rgb(self, h):
-        h = h.lstrip("#")
-        return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-
-    def rgb_to_hex(self, rgb):
-        return "#%02x%02x%02x" % rgb
-
-    def animar_color(self, widget, inicio, fin, pasos=10, delay=30):
-        r1, g1, b1 = self.hex_to_rgb(inicio)
-        r2, g2, b2 = self.hex_to_rgb(fin)
-
-        def step(i=0):
-            if i > pasos:
-                return
-            r = int(r1 + (r2 - r1) * i / pasos)
-            g = int(g1 + (g2 - g1) * i / pasos)
-            b = int(b1 + (b2 - b1) * i / pasos)
-            widget.config(fg=self.rgb_to_hex((r, g, b)))
-            self.root.after(delay, lambda: step(i + 1))
-
-        step()
-
-    def flash(self):
-        original = self.root["bg"]
-        self.root.config(bg="#003300")
-        self.root.after(100, lambda: self.root.config(bg=original))
-
-    # ---------------------------
-    # ui
+    # UI
     # ---------------------------
     def crear_switch(self, texto, var):
         frame = tk.Frame(self.root, bg="#111")
@@ -191,67 +162,35 @@ class App:
         tk.Button(self.root, text="RESTAURAR",
                   command=self.restaurar,
                   bg="#444", fg="white").pack(fill="x", padx=20)
-        
+
         tk.Button(self.root, text="SIMULACION",
-                  command=self.restaurar,
-                  bg="#444", fg="white").pack(fill="x", padx=20)
+                  command=self.simulacion,
+                  bg="#222", fg="white").pack(fill="x", padx=20, pady=10)
 
         self.estado = tk.Label(self.root,
                                text="Estado: Normal",
                                fg="#aaa", bg="#0b0b0b")
         self.estado.pack(pady=10)
-        
 
     # ---------------------------
-    # funciones
+    # FUNCIONES
     # ---------------------------
     def actualizar_velocidad(self, v):
         self.vel_label.config(text=f"{v} km/h")
 
-    def bloquear_controles(self, bloquear=True):
-        estado = "disabled" if bloquear else "normal"
-
-        for btn in self.btns.values():
-            btn.config(state=estado)
-
-        self.scale.config(state=estado)
-
     def activar(self):
-        self.historial.guardar(self.seguridad.create_memento())
-
-        # MODELO primero
         self.seguridad.set_config(True, True, True, 60)
-
-        # UI sincronizada
         self.cargar_ui()
-
         self.modo_infantil_activo = True
-        self.bloquear_controles(True)
-
-        self.indicador.config(text="● MODO INFANTIL ACTIVO")
-        self.animar_color(self.indicador, "#004400", "#00ff00")
-
-        self.estado.config(text="Modo infantil activado (60 km/h)", fg="#00ff00")
-
-        self.flash()
+        self.estado.config(text="Modo infantil activado", fg="#00ff00")
         sonido_ok()
 
     def restaurar(self):
-    # Estado fijo (no depende del historial)
         self.seguridad.set_config(False, False, False, 120)
-
-    # Actualizar UI
         self.cargar_ui()
-
         self.modo_infantil_activo = False
-        self.bloquear_controles(False)
-  
-        self.indicador.config(text="● SISTEMA NORMAL")
-        self.animar_color(self.indicador, "#333300", "#00ff00")
-
-        self.estado.config(text="Restablecido a valores por defecto", fg="#ffaa00")
-
-    sonido_restore()
+        self.estado.config(text="Restablecido", fg="#ffaa00")
+        sonido_restore()
 
     def cargar_ui(self):
         config = self.seguridad.config
@@ -259,22 +198,35 @@ class App:
         for key in ["ventanas", "puertas", "cinturon"]:
             valor = config[key]
             self.vars[key].set(valor)
-
             btn = self.btns[key]
-
-            if valor:
-                btn.config(text="ON", bg="#00aa00")
-            else:
-                btn.config(text="OFF", bg="#550000")
+            btn.config(text="ON" if valor else "OFF",
+                       bg="#00aa00" if valor else "#550000")
 
         self.vars["velocidad"].set(config["velocidad"])
         self.scale.set(config["velocidad"])
-
         self.actualizar_velocidad(config["velocidad"])
+
+    #  SIMULACIÓN CON DATOS
+    def simulacion(self):
+        if hasattr(self, "proceso_sim") and self.proceso_sim.poll() is None:
+            print("La simulación ya está abierta")
+            return
+
+        try:
+            self.proceso_sim = subprocess.Popen([
+                sys.executable,
+                r"C:\Users\PC\Downloads\CarroAnimado.py",
+                str(self.vars["velocidad"].get()),
+                str(self.vars["cinturon"].get()),
+                str(self.vars["puertas"].get()),
+                str(self.vars["ventanas"].get())
+            ])
+        except Exception as e:
+            print("Error:", e)
 
 
 # ---------------------------
-# main
+# MAIN
 # ---------------------------
 if __name__ == "__main__":
     root = tk.Tk()
