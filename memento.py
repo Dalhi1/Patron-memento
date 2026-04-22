@@ -191,11 +191,16 @@ class App:
         tk.Button(self.root, text="RESTAURAR",
                   command=self.restaurar,
                   bg="#444", fg="white").pack(fill="x", padx=20)
+        
+        tk.Button(self.root, text="SIMULACION",
+                  command=self.restaurar,
+                  bg="#444", fg="white").pack(fill="x", padx=20)
 
         self.estado = tk.Label(self.root,
                                text="Estado: Normal",
                                fg="#aaa", bg="#0b0b0b")
         self.estado.pack(pady=10)
+        
 
     # ---------------------------
     # funciones
@@ -232,26 +237,21 @@ class App:
         sonido_ok()
 
     def restaurar(self):
-        memento = self.historial.deshacer()
+    # Estado fijo (no depende del historial)
+        self.seguridad.set_config(False, False, False, 120)
 
-        if memento:
-            self.seguridad.restore(memento)
-            self.cargar_ui()
+    # Actualizar UI
+        self.cargar_ui()
 
-            self.modo_infantil_activo = False
-            self.bloquear_controles(False)
+        self.modo_infantil_activo = False
+        self.bloquear_controles(False)
+  
+        self.indicador.config(text="● SISTEMA NORMAL")
+        self.animar_color(self.indicador, "#333300", "#00ff00")
 
-            self.indicador.config(text="● SISTEMA NORMAL")
-            self.animar_color(self.indicador, "#333300", "#00ff00")
+        self.estado.config(text="Restablecido a valores por defecto", fg="#ffaa00")
 
-            self.estado.config(text="Restaurado", fg="#ffaa00")
-            sonido_restore()
-        else:
-            self.indicador.config(text="● ERROR")
-            self.animar_color(self.indicador, "#440000", "#ff0000")
-
-            self.estado.config(text="Sin historial", fg="#ff4444")
-            sonido_error()
+    sonido_restore()
 
     def cargar_ui(self):
         config = self.seguridad.config
