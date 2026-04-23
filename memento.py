@@ -195,26 +195,16 @@ class App:
         self.perfiles.pack(pady=10)
         
         tk.Button(self.root, text="Seguro",
-                  command=self.cambioperfil("Seguro"),
+                  command=self.simulacionSeguro,
                   bg="green", fg="black").pack(fill="x", padx=5, pady=3)
         
         tk.Button(self.root, text="Normal",
-                  command=self.cambioperfil("Normal"),
+                  command=self.simulacionNormal,
                   bg="yellow", fg="black").pack(fill="x", padx=1, pady=1)
         
         tk.Button(self.root, text="MUERTE",
-                  command=self.cambioperfil("MUERTE"),
+                  command=self.simulacionMUERTE,
                   bg="red", fg="black").pack(fill="x", padx=1, pady=1)
-        
-    def cambioperfil(self, perfil):
-        if perfil == "Seguro":
-            self.vars["velocidad"].set(40)
-        elif perfil == "Normal":
-            self.vars["velocidad"].set(120)
-        elif perfil == "MUERTE":
-            self.vars["velocidad"].set(180)
-        else:
-            return
         
         self.cargar_ui()
 
@@ -361,6 +351,294 @@ class App:
 
         # Volver a llamar a esta función después de VELOCIDAD_MS
         self.animacion_id = self.root.after(velocidad_animacion, self.animar)
+        
+    def simulacionNormal(self):
+        # Verificar si ya hay una ventana abierta
+        if self.ventana_simulacion and self.ventana_simulacion.winfo_exists():
+            sonido_error()
+            messagebox.showwarning("Advertencia", "Ya hay una simulación abierta.")
+            return
+
+        
+        self.ventana_simulacion = tk.Toplevel(self.root)
+        self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
+        self.ventana_simulacion.title("Simulación")
+        self.ventana_simulacion.geometry("1000x900")
+
+        
+        velocidad = 120
+        ventana = self.vars["ventanas"].get()
+        puertas = self.vars["puertas"].get()
+        cinturon = self.vars["cinturon"].get()
+        #variables
+
+
+        tamaño_letra = 10
+
+        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
+
+
+        self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
+        self.canvas.pack(padx=10, pady=10)
+        
+        # Dibujar el obstáculo (un bloque rojo al final del canvas)
+        self.obstaculo = self.canvas.create_rectangle(750, 150, 780, 220, fill="gray", outline="black")
+        
+        self.partes_carro = []
+
+        # Chasis (Cuerpo principal - rectángulo azul)
+        chasis = self.canvas.create_rectangle(50, 150, 200, 200, fill="blue", outline="black")
+        self.partes_carro.append(chasis)
+
+        # Techo (Parte superior - rectángulo azul más pequeño)
+        techo = self.canvas.create_rectangle(80, 110, 170, 150, fill="blue", outline="black")
+        self.partes_carro.append(techo)
+
+        # Ventanas (dos rectángulos celestes)
+        ventana1 = self.canvas.create_rectangle(90, 120, 120, 145, fill="lightcyan", outline="black")
+        ventana2 = self.canvas.create_rectangle(130, 120, 160, 145, fill="lightcyan", outline="black")
+        self.partes_carro.append(ventana1)
+        self.partes_carro.append(ventana2)
+
+        # Llantas (dos círculos negros con centro gris)
+        llanta_trasera = self.canvas.create_oval(70, 180, 110, 220, fill="black", outline="black")
+        llanta_delantera = self.canvas.create_oval(140, 180, 180, 220, fill="black", outline="black")
+        centro_trasero = self.canvas.create_oval(85, 195, 95, 205, fill="gray", outline="black")
+        centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
+        self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
+        
+        
+        
+        self.animarNormal()    
+    
+    def animarNormal(self):
+        
+        kmh = 120
+        paso_pixeles = self.calcular_paso_pixeles(kmh)
+        velocidad_animacion =20
+        altura_canvas = 250
+        ancho_canva= 900
+        
+        # 1. Obtener coordenadas actuales del chasis y del obstáculo
+        coord_chasis = self.canvas.coords(self.partes_carro[0]) # [x1, y1, x2, y2]
+        coord_obs = self.canvas.coords(self.obstaculo)          # [ox1, oy1, ox2, oy2]
+        
+        # 2. DETECCIÓN DE COLISIÓN
+        # Si el borde derecho del chasis (coord_chasis[2]) toca el izquierdo del obstáculo (coord_obs[0])
+        if coord_chasis[2] >= coord_obs[0]:
+            print("¡COLISIÓN!")
+            sonido_choque_sintetico()
+            # Aquí termina la función y NO llamamos a after(), por lo que se detiene.
+            return
+            
+        for parte in self.partes_carro:
+            self.canvas.move(parte, paso_pixeles, 0)
+
+        # Verificar si el carro salió de la pantalla para reiniciarlo
+        # Obtenemos las coordenadas del chasis (la primera parte) [x1, y1, x2, y2]
+        coord_chasis = self.canvas.coords(self.partes_carro[0])
+        
+        # Si el borde izquierdo del chasis supera el ancho de la ventana
+        if coord_chasis[0] > ancho_canva:
+            ancho_carro = 150
+            distancia_reinicio = -(ancho_canva + ancho_carro)
+            for parte in self.partes_carro:
+                self.canvas.move(parte, distancia_reinicio, 0)
+
+        # Volver a llamar a esta función después de VELOCIDAD_MS
+        self.animacion_id = self.root.after(velocidad_animacion, self.animarNormal)
+        
+    def simulacionSeguro(self):
+        # Verificar si ya hay una ventana abierta
+        if self.ventana_simulacion and self.ventana_simulacion.winfo_exists():
+            sonido_error()
+            messagebox.showwarning("Advertencia", "Ya hay una simulación abierta.")
+            return
+
+        
+        self.ventana_simulacion = tk.Toplevel(self.root)
+        self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
+        self.ventana_simulacion.title("Simulación")
+        self.ventana_simulacion.geometry("1000x900")
+
+        
+        velocidad = 40
+        ventana = self.vars["ventanas"].get()
+        puertas = self.vars["puertas"].get()
+        cinturon = self.vars["cinturon"].get()
+        #variables
+
+
+        tamaño_letra = 10
+
+        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
+
+
+        self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
+        self.canvas.pack(padx=10, pady=10)
+        
+        # Dibujar el obstáculo (un bloque rojo al final del canvas)
+        self.obstaculo = self.canvas.create_rectangle(750, 150, 780, 220, fill="gray", outline="black")
+        
+        self.partes_carro = []
+
+        # Chasis (Cuerpo principal - rectángulo azul)
+        chasis = self.canvas.create_rectangle(50, 150, 200, 200, fill="blue", outline="black")
+        self.partes_carro.append(chasis)
+
+        # Techo (Parte superior - rectángulo azul más pequeño)
+        techo = self.canvas.create_rectangle(80, 110, 170, 150, fill="blue", outline="black")
+        self.partes_carro.append(techo)
+
+        # Ventanas (dos rectángulos celestes)
+        ventana1 = self.canvas.create_rectangle(90, 120, 120, 145, fill="lightcyan", outline="black")
+        ventana2 = self.canvas.create_rectangle(130, 120, 160, 145, fill="lightcyan", outline="black")
+        self.partes_carro.append(ventana1)
+        self.partes_carro.append(ventana2)
+
+        # Llantas (dos círculos negros con centro gris)
+        llanta_trasera = self.canvas.create_oval(70, 180, 110, 220, fill="black", outline="black")
+        llanta_delantera = self.canvas.create_oval(140, 180, 180, 220, fill="black", outline="black")
+        centro_trasero = self.canvas.create_oval(85, 195, 95, 205, fill="gray", outline="black")
+        centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
+        self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
+        
+        
+        
+        self.animarSeguro()    
+    
+    def animarSeguro(self):
+        
+        kmh = 40
+        paso_pixeles = self.calcular_paso_pixeles(kmh)
+        velocidad_animacion =20
+        altura_canvas = 250
+        ancho_canva= 900
+        
+        # 1. Obtener coordenadas actuales del chasis y del obstáculo
+        coord_chasis = self.canvas.coords(self.partes_carro[0]) # [x1, y1, x2, y2]
+        coord_obs = self.canvas.coords(self.obstaculo)          # [ox1, oy1, ox2, oy2]
+        
+        # 2. DETECCIÓN DE COLISIÓN
+        # Si el borde derecho del chasis (coord_chasis[2]) toca el izquierdo del obstáculo (coord_obs[0])
+        if coord_chasis[2] >= coord_obs[0]:
+            print("¡COLISIÓN!")
+            sonido_choque_sintetico()
+            # Aquí termina la función y NO llamamos a after(), por lo que se detiene.
+            return
+            
+        for parte in self.partes_carro:
+            self.canvas.move(parte, paso_pixeles, 0)
+
+        # Verificar si el carro salió de la pantalla para reiniciarlo
+        # Obtenemos las coordenadas del chasis (la primera parte) [x1, y1, x2, y2]
+        coord_chasis = self.canvas.coords(self.partes_carro[0])
+        
+        # Si el borde izquierdo del chasis supera el ancho de la ventana
+        if coord_chasis[0] > ancho_canva:
+            ancho_carro = 150
+            distancia_reinicio = -(ancho_canva + ancho_carro)
+            for parte in self.partes_carro:
+                self.canvas.move(parte, distancia_reinicio, 0)
+
+        # Volver a llamar a esta función después de VELOCIDAD_MS
+        self.animacion_id = self.root.after(velocidad_animacion, self.animarSeguro)
+        
+    def simulacionMUERTE(self):
+        # Verificar si ya hay una ventana abierta
+        if self.ventana_simulacion and self.ventana_simulacion.winfo_exists():
+            sonido_error()
+            messagebox.showwarning("Advertencia", "Ya hay una simulación abierta.")
+            return
+
+        
+        self.ventana_simulacion = tk.Toplevel(self.root)
+        self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
+        self.ventana_simulacion.title("Simulación")
+        self.ventana_simulacion.geometry("1000x900")
+
+        
+        velocidad = 180
+        ventana = self.vars["ventanas"].get()
+        puertas = self.vars["puertas"].get()
+        cinturon = self.vars["cinturon"].get()
+        #variables
+
+
+        tamaño_letra = 10
+
+        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
+
+
+        self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
+        self.canvas.pack(padx=10, pady=10)
+        
+        # Dibujar el obstáculo (un bloque rojo al final del canvas)
+        self.obstaculo = self.canvas.create_rectangle(750, 150, 780, 220, fill="gray", outline="black")
+        
+        self.partes_carro = []
+
+        # Chasis (Cuerpo principal - rectángulo azul)
+        chasis = self.canvas.create_rectangle(50, 150, 200, 200, fill="blue", outline="black")
+        self.partes_carro.append(chasis)
+
+        # Techo (Parte superior - rectángulo azul más pequeño)
+        techo = self.canvas.create_rectangle(80, 110, 170, 150, fill="blue", outline="black")
+        self.partes_carro.append(techo)
+
+        # Ventanas (dos rectángulos celestes)
+        ventana1 = self.canvas.create_rectangle(90, 120, 120, 145, fill="lightcyan", outline="black")
+        ventana2 = self.canvas.create_rectangle(130, 120, 160, 145, fill="lightcyan", outline="black")
+        self.partes_carro.append(ventana1)
+        self.partes_carro.append(ventana2)
+
+        # Llantas (dos círculos negros con centro gris)
+        llanta_trasera = self.canvas.create_oval(70, 180, 110, 220, fill="black", outline="black")
+        llanta_delantera = self.canvas.create_oval(140, 180, 180, 220, fill="black", outline="black")
+        centro_trasero = self.canvas.create_oval(85, 195, 95, 205, fill="gray", outline="black")
+        centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
+        self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
+        
+        
+        
+        self.animarMUERTE()    
+    
+    def animarMUERTE(self):
+        
+        kmh = 180
+        paso_pixeles = self.calcular_paso_pixeles(kmh)
+        velocidad_animacion =20
+        altura_canvas = 250
+        ancho_canva= 900
+        
+        # 1. Obtener coordenadas actuales del chasis y del obstáculo
+        coord_chasis = self.canvas.coords(self.partes_carro[0]) # [x1, y1, x2, y2]
+        coord_obs = self.canvas.coords(self.obstaculo)          # [ox1, oy1, ox2, oy2]
+        
+        # 2. DETECCIÓN DE COLISIÓN
+        # Si el borde derecho del chasis (coord_chasis[2]) toca el izquierdo del obstáculo (coord_obs[0])
+        if coord_chasis[2] >= coord_obs[0]:
+            print("¡COLISIÓN!")
+            sonido_choque_sintetico()
+            # Aquí termina la función y NO llamamos a after(), por lo que se detiene.
+            return
+            
+        for parte in self.partes_carro:
+            self.canvas.move(parte, paso_pixeles, 0)
+
+        # Verificar si el carro salió de la pantalla para reiniciarlo
+        # Obtenemos las coordenadas del chasis (la primera parte) [x1, y1, x2, y2]
+        coord_chasis = self.canvas.coords(self.partes_carro[0])
+        
+        # Si el borde izquierdo del chasis supera el ancho de la ventana
+        if coord_chasis[0] > ancho_canva:
+            ancho_carro = 150
+            distancia_reinicio = -(ancho_canva + ancho_carro)
+            for parte in self.partes_carro:
+                self.canvas.move(parte, distancia_reinicio, 0)
+
+        # Volver a llamar a esta función después de VELOCIDAD_MS
+        self.animacion_id = self.root.after(velocidad_animacion, self.animarMUERTE)
         
     def detener_animacion(self):
         if self.animacion_id:
