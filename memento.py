@@ -29,6 +29,15 @@ else:
     def sonido_error(): print("\a")
     def sonido_choque_sintetico(): print("\a")
 
+#varibles globales
+simulacion_alto= 600
+simulacion_ancho= 1000
+aviso_simulacion = "¡ATENCIÓN! La simulación es solo una representación visual y no refleja con precisión las consecuencias reales de un accidente. Conducir a altas velocidades sin las medidas de seguridad adecuadas puede resultar en lesiones graves o la muerte. Esta simulación no debe ser tomada a la ligera. Siempre conduce de manera segura y responsable."
+
+color1 = "#3c493f"
+color2 = "#7E8D85"
+color3 = "#B3BFB8"
+color4 = "#A2E3C4"
 
 # ---------------------------
 # MEMENTO
@@ -196,15 +205,15 @@ class App:
         
         tk.Button(self.root, text="Seguro",
                   command=self.simulacionSeguro,
-                  bg="green", fg="black").pack(fill="x", padx=5, pady=3)
+                  bg="green", fg="black").pack(fill="x", padx=5, pady=1)
         
         tk.Button(self.root, text="Normal",
                   command=self.simulacionNormal,
-                  bg="yellow", fg="black").pack(fill="x", padx=1, pady=1)
+                  bg="yellow", fg="black").pack(fill="x", padx=5, pady=1)
         
         tk.Button(self.root, text="MUERTE",
                   command=self.simulacionMUERTE,
-                  bg="red", fg="black").pack(fill="x", padx=1, pady=1)
+                  bg="red", fg="black").pack(fill="x", padx=5, pady=1)
         
         self.cargar_ui()
 
@@ -255,6 +264,8 @@ class App:
         self.vel_label.config(text=f"{config['velocidad']} km/h")
         
 
+
+
     #  SIMULACIÓN CON DATOS
     def simulacion(self):
         # Verificar si ya hay una ventana abierta
@@ -265,9 +276,10 @@ class App:
 
         
         self.ventana_simulacion = tk.Toplevel(self.root)
+        self.ventana_simulacion.configure(bg=color1)
         self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
         self.ventana_simulacion.title("Simulación")
-        self.ventana_simulacion.geometry("1000x900")
+        self.ventana_simulacion.geometry(str(simulacion_ancho) + "x" + str(simulacion_alto))
 
        
         velocidad = self.vars["velocidad"].get()
@@ -276,11 +288,7 @@ class App:
         cinturon = self.vars["cinturon"].get()
         #variables
 
-
         tamaño_letra = 10
-
-        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
-
 
         self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
         self.canvas.pack(padx=10, pady=10)
@@ -310,8 +318,24 @@ class App:
         centro_trasero = self.canvas.create_oval(85, 195, 95, 205, fill="gray", outline="black")
         centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
         self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
+            
+        if ventana:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
         
+        if puertas:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
         
+        if cinturon:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad no esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+
+
+        tk.Label(self.ventana_simulacion, text=aviso_simulacion, fg="#fff", bg="red", font=("Arial", 10), wraplength=900).pack(side="bottom", fill="x")
         
         self.animar()    
     
@@ -362,21 +386,16 @@ class App:
         
         self.ventana_simulacion = tk.Toplevel(self.root)
         self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
+        self.ventana_simulacion.configure(bg=color1)
         self.ventana_simulacion.title("Simulación")
-        self.ventana_simulacion.geometry("1000x900")
+        self.ventana_simulacion.geometry(str(simulacion_ancho) + "x" + str(simulacion_alto))
 
         
         velocidad = 120
-        ventana = self.vars["ventanas"].get()
-        puertas = self.vars["puertas"].get()
-        cinturon = self.vars["cinturon"].get()
+        ventana = False
+        puertas = False
+        cinturon = True
         #variables
-
-
-        tamaño_letra = 10
-
-        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
-
 
         self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
         self.canvas.pack(padx=10, pady=10)
@@ -407,7 +426,23 @@ class App:
         centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
         self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
         
+        if ventana:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
         
+        if puertas:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        
+        if cinturon:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad no esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+
+
+        tk.Label(self.ventana_simulacion, text=aviso_simulacion, fg="#fff", bg="red", font=("Arial", 10), wraplength=900).pack(side="bottom", fill="x")
         
         self.animarNormal()    
     
@@ -458,22 +493,16 @@ class App:
         
         self.ventana_simulacion = tk.Toplevel(self.root)
         self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
+        self.ventana_simulacion.configure(bg=color1)
         self.ventana_simulacion.title("Simulación")
-        self.ventana_simulacion.geometry("1000x900")
+        self.ventana_simulacion.geometry(str(simulacion_ancho) + "x" + str(simulacion_alto))
 
         
         velocidad = 40
-        ventana = self.vars["ventanas"].get()
-        puertas = self.vars["puertas"].get()
-        cinturon = self.vars["cinturon"].get()
+        ventana = True
+        puertas = True
+        cinturon = True
         #variables
-
-
-        tamaño_letra = 10
-
-        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
-
-
         self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
         self.canvas.pack(padx=10, pady=10)
         
@@ -503,7 +532,23 @@ class App:
         centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
         self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
         
+        if ventana:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
         
+        if puertas:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        
+        if cinturon:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad no esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+
+
+        tk.Label(self.ventana_simulacion, text=aviso_simulacion, fg="#fff", bg="red", font=("Arial", 10), wraplength=900).pack(side="bottom", fill="x")
         
         self.animarSeguro()    
     
@@ -554,21 +599,16 @@ class App:
         
         self.ventana_simulacion = tk.Toplevel(self.root)
         self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
+        self.ventana_simulacion.configure(bg=color1)
         self.ventana_simulacion.title("Simulación")
-        self.ventana_simulacion.geometry("1000x900")
+        self.ventana_simulacion.geometry(str(simulacion_ancho) + "x" + str(simulacion_alto))
 
         
         velocidad = 180
-        ventana = self.vars["ventanas"].get()
-        puertas = self.vars["puertas"].get()
-        cinturon = self.vars["cinturon"].get()
+        ventana = False
+        puertas = False
+        cinturon = False
         #variables
-
-
-        tamaño_letra = 10
-
-        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
-
 
         self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
         self.canvas.pack(padx=10, pady=10)
@@ -599,7 +639,23 @@ class App:
         centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
         self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
         
+        if ventana:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"La ventanas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
         
+        if puertas:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"Las puertas no estan bloqueadas", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        
+        if cinturon:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+        else:
+            tk.Label(self.ventana_simulacion, text=f"El cinturon de seguridad no esta activo", fg="#ffffff", bg=color1, font=("Arial", 15)).pack(pady=5)
+
+
+        tk.Label(self.ventana_simulacion, text=aviso_simulacion, fg="#fff", bg="red", font=("Arial", 10), wraplength=900).pack(side="bottom", fill="x")
         
         self.animarMUERTE()    
     
