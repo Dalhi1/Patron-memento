@@ -11,10 +11,23 @@ if sys.platform == "win32":
     def sonido_ok(): winsound.Beep(1000, 150)
     def sonido_restore(): winsound.Beep(600, 150)
     def sonido_error(): winsound.Beep(300, 300)
+    
+    def sonido_choque_sintetico():
+            # 1. El impacto inicial (un golpe grave y seco)
+        winsound.Beep(300, 150) 
+        
+        # 2. El "crujido" del metal (secuencia descendente rápida)
+        winsound.Beep(250, 100)
+        winsound.Beep(200, 100)
+        winsound.Beep(150, 150)
+        
+        # 3. El sonido final de restos/metal (un tono muy grave)
+        winsound.Beep(100, 250)
 else:
     def sonido_ok(): print("\a")
     def sonido_restore(): print("\a")
     def sonido_error(): print("\a")
+    def sonido_choque_sintetico(): print("\a")
 
 
 # ---------------------------
@@ -175,6 +188,36 @@ class App:
                                text="Estado: Normal",
                                fg="#aaa", bg="#0b0b0b")
         self.estado.pack(pady=10)
+        
+        self.perfiles = tk.Label(self.root,
+                               text="Elige un perfil",
+                               fg="#aaa", bg="#0b0b0b")
+        self.perfiles.pack(pady=10)
+        
+        tk.Button(self.root, text="Seguro",
+                  command=self.cambioperfil("Seguro"),
+                  bg="green", fg="black").pack(fill="x", padx=5, pady=3)
+        
+        tk.Button(self.root, text="Normal",
+                  command=self.cambioperfil("Normal"),
+                  bg="yellow", fg="black").pack(fill="x", padx=1, pady=1)
+        
+        tk.Button(self.root, text="MUERTE",
+                  command=self.cambioperfil("MUERTE"),
+                  bg="red", fg="black").pack(fill="x", padx=1, pady=1)
+        
+    def cambioperfil(self, perfil):
+        if perfil == "Seguro":
+            self.vars["velocidad"].set(40)
+        elif perfil == "Normal":
+            self.vars["velocidad"].set(120)
+        elif perfil == "MUERTE":
+            self.vars["velocidad"].set(180)
+        else:
+            return
+        
+        self.cargar_ui()
+
 
     # ---------------------------
     # FUNCIONES
@@ -230,16 +273,19 @@ class App:
             messagebox.showwarning("Advertencia", "Ya hay una simulación abierta.")
             return
 
+        
         self.ventana_simulacion = tk.Toplevel(self.root)
         self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
         self.ventana_simulacion.title("Simulación")
         self.ventana_simulacion.geometry("1000x900")
 
-        #variables
+       
         velocidad = self.vars["velocidad"].get()
         ventana = self.vars["ventanas"].get()
         puertas = self.vars["puertas"].get()
         cinturon = self.vars["cinturon"].get()
+        #variables
+
 
         tamaño_letra = 10
 
@@ -248,6 +294,9 @@ class App:
 
         self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
         self.canvas.pack(padx=10, pady=10)
+        
+        # Dibujar el obstáculo (un bloque rojo al final del canvas)
+        self.obstaculo = self.canvas.create_rectangle(750, 150, 780, 220, fill="gray", outline="black")
         
         self.partes_carro = []
 
@@ -284,6 +333,18 @@ class App:
         altura_canvas = 250
         ancho_canva= 900
         
+        # 1. Obtener coordenadas actuales del chasis y del obstáculo
+        coord_chasis = self.canvas.coords(self.partes_carro[0]) # [x1, y1, x2, y2]
+        coord_obs = self.canvas.coords(self.obstaculo)          # [ox1, oy1, ox2, oy2]
+        
+        # 2. DETECCIÓN DE COLISIÓN
+        # Si el borde derecho del chasis (coord_chasis[2]) toca el izquierdo del obstáculo (coord_obs[0])
+        if coord_chasis[2] >= coord_obs[0]:
+            print("¡COLISIÓN!")
+            sonido_choque_sintetico()
+            # Aquí termina la función y NO llamamos a after(), por lo que se detiene.
+            return
+            
         for parte in self.partes_carro:
             self.canvas.move(parte, paso_pixeles, 0)
 
@@ -293,8 +354,6 @@ class App:
         
         # Si el borde izquierdo del chasis supera el ancho de la ventana
         if coord_chasis[0] > ancho_canva:
-            # Calculamos cuánto moverlo de vuelta (es una distancia negativa)
-            # El ancho del carro es 150px (200 - 50 del diseño inicial)
             ancho_carro = 150
             distancia_reinicio = -(ancho_canva + ancho_carro)
             for parte in self.partes_carro:
