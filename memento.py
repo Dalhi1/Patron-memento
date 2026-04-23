@@ -218,9 +218,18 @@ class App:
         ventana = self.vars["ventanas"].get()
         puertas = self.vars["puertas"].get()
         cinturon = self.vars["cinturon"].get()
+        #Dibujar valores
         self.label_velocidad = tk.Label(ventana_simulacion, text=f"Velocidad: {velocidad} km/h", fg="#fff", bg="#222", font=("Arial", 14))
         self.label_velocidad.pack(side="top")
         
+        self.label_ventanas = tk.Label(ventana_simulacion, text=f"Ventanas bloqueadas: {'Sí' if ventana else 'No'}", fg="#fff", bg="#222", font=("Arial", 14))
+        self.label_ventanas.pack(side="top")
+
+        self.label_puertas = tk.Label(ventana_simulacion, text=f"Puertas bloqueadas: {'Sí' if puertas else 'No'}", fg="#fff", bg="#222", font=("Arial", 14))
+        self.label_puertas.pack(side="top")
+
+        self.label_cinturon = tk.Label(ventana_simulacion, text=f"Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial", 14))
+        self.label_cinturon.pack(side="top")
 
 
 # ---------------------------
