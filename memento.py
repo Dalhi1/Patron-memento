@@ -204,25 +204,23 @@ class App:
 
         self.vars["velocidad"].set(config["velocidad"])
         self.scale.set(config["velocidad"])
-        self.actualizar_velocidad(config["velocidad"])
+        
 
     #  SIMULACIÓN CON DATOS
     def simulacion(self):
-        if hasattr(self, "proceso_sim") and self.proceso_sim.poll() is None:
-            print("La simulación ya está abierta")
-            return
-
-        try:
-            self.proceso_sim = subprocess.Popen([
-                sys.executable,
-                r"C:\Users\PC\Downloads\CarroAnimado.py",
-                str(self.vars["velocidad"].get()),
-                str(self.vars["cinturon"].get()),
-                str(self.vars["puertas"].get()),
-                str(self.vars["ventanas"].get())
-            ])
-        except Exception as e:
-            print("Error:", e)
+        ventana_simulacion = tk.Toplevel(self.root)
+        ventana_simulacion.title("Simulación")
+        ventana_simulacion.geometry("600x500")
+        
+        #Creacion del canvas
+        canvas_simulador = tk.Canvas(ventana_simulacion, width=480, height=580, bg="#222")
+        velocidad = self.vars["velocidad"].get()
+        ventana = self.vars["ventanas"].get()
+        puertas = self.vars["puertas"].get()
+        cinturon = self.vars["cinturon"].get()
+        self.label_velocidad = tk.Label(ventana_simulacion, text=f"Velocidad: {velocidad} km/h", fg="#fff", bg="#222", font=("Arial", 14))
+        self.label_velocidad.pack(side="top")
+        
 
 
 # ---------------------------
