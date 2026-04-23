@@ -85,6 +85,8 @@ class App:
         self.historial = Historial()
         self.modo_infantil_activo = False
         self.ventana_simulacion = None
+        ##test
+        self.animacion_id = None
 
         self.vars = {
             "ventanas": tk.BooleanVar(value=False),
@@ -229,19 +231,97 @@ class App:
             return
 
         self.ventana_simulacion = tk.Toplevel(self.root)
+        self.ventana_simulacion.protocol("WM_DELETE_WINDOW", self.cerrar_simulacion)
         self.ventana_simulacion.title("Simulación")
-        self.ventana_simulacion.geometry("600x500")
+        self.ventana_simulacion.geometry("1000x900")
 
+        #variables
         velocidad = self.vars["velocidad"].get()
         ventana = self.vars["ventanas"].get()
         puertas = self.vars["puertas"].get()
         cinturon = self.vars["cinturon"].get()
 
-        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
-        tk.Label(self.ventana_simulacion, text=f"Ventanas bloqueadas: {'Sí' if ventana else 'No'}", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
-        tk.Label(self.ventana_simulacion, text=f"Puertas bloqueadas: {'Sí' if puertas else 'No'}", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
-        tk.Label(self.ventana_simulacion, text=f"Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
+        tamaño_letra = 10
 
+        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h ,Ventanas bloqueadas: {'Sí' if ventana else 'No'}, Puertas bloqueadas: {'Sí' if puertas else 'No'}, Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial",tamaño_letra)).pack(side="top", fill="x")
+
+
+        self.canvas = tk.Canvas(self.ventana_simulacion, width=900, height=250, bg="#0b0b0b")
+        self.canvas.pack(padx=10, pady=10)
+        
+        self.partes_carro = []
+
+        # Chasis (Cuerpo principal - rectángulo azul)
+        chasis = self.canvas.create_rectangle(50, 150, 200, 200, fill="blue", outline="black")
+        self.partes_carro.append(chasis)
+
+        # Techo (Parte superior - rectángulo azul más pequeño)
+        techo = self.canvas.create_rectangle(80, 110, 170, 150, fill="blue", outline="black")
+        self.partes_carro.append(techo)
+
+        # Ventanas (dos rectángulos celestes)
+        ventana1 = self.canvas.create_rectangle(90, 120, 120, 145, fill="lightcyan", outline="black")
+        ventana2 = self.canvas.create_rectangle(130, 120, 160, 145, fill="lightcyan", outline="black")
+        self.partes_carro.append(ventana1)
+        self.partes_carro.append(ventana2)
+
+        # Llantas (dos círculos negros con centro gris)
+        llanta_trasera = self.canvas.create_oval(70, 180, 110, 220, fill="black", outline="black")
+        llanta_delantera = self.canvas.create_oval(140, 180, 180, 220, fill="black", outline="black")
+        centro_trasero = self.canvas.create_oval(85, 195, 95, 205, fill="gray", outline="black")
+        centro_delantero = self.canvas.create_oval(155, 195, 165, 205, fill="gray", outline="black")
+        self.partes_carro.extend([llanta_trasera, llanta_delantera, centro_trasero, centro_delantero])
+        
+        
+        
+        self.animar()    
+    
+    def animar(self):
+        
+        kmh = self.vars["velocidad"].get()
+        paso_pixeles = self.calcular_paso_pixeles(kmh)
+        velocidad_animacion =20
+        altura_canvas = 250
+        ancho_canva= 900
+        
+        for parte in self.partes_carro:
+            self.canvas.move(parte, paso_pixeles, 0)
+
+        # Verificar si el carro salió de la pantalla para reiniciarlo
+        # Obtenemos las coordenadas del chasis (la primera parte) [x1, y1, x2, y2]
+        coord_chasis = self.canvas.coords(self.partes_carro[0])
+        
+        # Si el borde izquierdo del chasis supera el ancho de la ventana
+        if coord_chasis[0] > ancho_canva:
+            # Calculamos cuánto moverlo de vuelta (es una distancia negativa)
+            # El ancho del carro es 150px (200 - 50 del diseño inicial)
+            ancho_carro = 150
+            distancia_reinicio = -(ancho_canva + ancho_carro)
+            for parte in self.partes_carro:
+                self.canvas.move(parte, distancia_reinicio, 0)
+
+        # Volver a llamar a esta función después de VELOCIDAD_MS
+        self.animacion_id = self.root.after(velocidad_animacion, self.animar)
+        
+    def detener_animacion(self):
+        if self.animacion_id:
+            self.root.after_cancel(self.animacion_id)
+            self.animacion_id = None
+            
+    def cerrar_simulacion(self):
+        self.detener_animacion()
+        self.ventana_simulacion.destroy()
+        
+    def calcular_paso_pixeles(self, kmh):
+        v_min, v_max = 40, 180
+        dest_min, dest_max = 1, 20
+        
+        # Aplicamos la fórmula
+        velocidadF = ((kmh - v_min) * (dest_max - dest_min) / (v_max - v_min)) + dest_min
+        
+        # Retornamos el valor como entero, ya que los píxeles no tienen decimales
+        return int(velocidadF)
+            
 
 # ---------------------------
 # MAIN
