@@ -1,6 +1,7 @@
 import tkinter as tk
 import sys
 import subprocess
+from tkinter import messagebox
 
 # ---------------------------
 # Sonidos
@@ -83,6 +84,7 @@ class App:
         self.seguridad = SeguridadInfantil()
         self.historial = Historial()
         self.modo_infantil_activo = False
+        self.ventana_simulacion = None
 
         self.vars = {
             "ventanas": tk.BooleanVar(value=False),
@@ -185,12 +187,22 @@ class App:
         self.estado.config(text="Modo infantil activado", fg="#00ff00")
         sonido_ok()
 
+        # Bloquear botones y escala
+        for btn in self.btns.values():
+            btn.config(state="disabled")
+        self.scale.config(state="disabled")
+
     def restaurar(self):
         self.seguridad.set_config(False, False, False, 120)
         self.cargar_ui()
         self.modo_infantil_activo = False
         self.estado.config(text="Restablecido", fg="#ffaa00")
         sonido_restore()
+
+        
+        for btn in self.btns.values():
+            btn.config(state="normal")
+        self.scale.config(state="normal")
 
     def cargar_ui(self):
         config = self.seguridad.config
@@ -204,32 +216,31 @@ class App:
 
         self.vars["velocidad"].set(config["velocidad"])
         self.scale.set(config["velocidad"])
+
+        self.vel_label.config(text=f"{config['velocidad']} km/h")
         
 
     #  SIMULACIÓN CON DATOS
     def simulacion(self):
-        ventana_simulacion = tk.Toplevel(self.root)
-        ventana_simulacion.title("Simulación")
-        ventana_simulacion.geometry("600x500")
-        
-        #Creacion del canvas
-        canvas_simulador = tk.Canvas(ventana_simulacion, width=480, height=580, bg="#222")
+        # Verificar si ya hay una ventana abierta
+        if self.ventana_simulacion and self.ventana_simulacion.winfo_exists():
+            sonido_error()
+            messagebox.showwarning("Advertencia", "Ya hay una simulación abierta.")
+            return
+
+        self.ventana_simulacion = tk.Toplevel(self.root)
+        self.ventana_simulacion.title("Simulación")
+        self.ventana_simulacion.geometry("600x500")
+
         velocidad = self.vars["velocidad"].get()
         ventana = self.vars["ventanas"].get()
         puertas = self.vars["puertas"].get()
         cinturon = self.vars["cinturon"].get()
-        #Dibujar valores
-        self.label_velocidad = tk.Label(ventana_simulacion, text=f"Velocidad: {velocidad} km/h", fg="#fff", bg="#222", font=("Arial", 14))
-        self.label_velocidad.pack(side="top")
-        
-        self.label_ventanas = tk.Label(ventana_simulacion, text=f"Ventanas bloqueadas: {'Sí' if ventana else 'No'}", fg="#fff", bg="#222", font=("Arial", 14))
-        self.label_ventanas.pack(side="top")
 
-        self.label_puertas = tk.Label(ventana_simulacion, text=f"Puertas bloqueadas: {'Sí' if puertas else 'No'}", fg="#fff", bg="#222", font=("Arial", 14))
-        self.label_puertas.pack(side="top")
-
-        self.label_cinturon = tk.Label(ventana_simulacion, text=f"Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial", 14))
-        self.label_cinturon.pack(side="top")
+        tk.Label(self.ventana_simulacion, text=f"Velocidad: {velocidad} km/h", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
+        tk.Label(self.ventana_simulacion, text=f"Ventanas bloqueadas: {'Sí' if ventana else 'No'}", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
+        tk.Label(self.ventana_simulacion, text=f"Puertas bloqueadas: {'Sí' if puertas else 'No'}", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
+        tk.Label(self.ventana_simulacion, text=f"Cinturón obligatorio: {'Sí' if cinturon else 'No'}", fg="#fff", bg="#222", font=("Arial", 14)).pack(side="top")
 
 
 # ---------------------------
